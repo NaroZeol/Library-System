@@ -1,0 +1,12 @@
+Admin:
+level 1 log读写许可
+level 2 图书，读者信息读取许可
+level 3 添加图书，读者信息许可
+level 4 添加管理员许可
+
+Reader:
+借阅容量 = level + 3
+
+必须在运行文件夹下建立一个data文件夹 用于存放数据文件
+默认情况下有一个超级管理员账户 Root 密码 Root ID为0
+
