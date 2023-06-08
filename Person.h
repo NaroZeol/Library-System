@@ -40,6 +40,7 @@ class Reader : public Person
     friend class Admin;
 private:
     std::vector<std::shared_ptr<Book>> BookBorrow;
+    std::vector<std::string> TimeRecord;
     static std::map<unsigned int, std::shared_ptr<Reader>> ReaderList;
     bool tempOrder;//记录是否为临时对象，如果是则不需要写入文件，因为是临时对象，true为临时对象，false为正式对象
 public:
@@ -59,6 +60,7 @@ public:
 
     void PrintBorrowedBooks ();
     std::vector<std::shared_ptr<Book>> &getBookBorrow();
+    std::vector<std::string> &getTimeRecord();
 
     void showInfo () const override;
 
@@ -105,6 +107,8 @@ public:
     std::shared_ptr<Admin>  addAdmin (const Admin &Admin_s);
     std::shared_ptr<Admin>  addAdmin (Admin &&Admin_s);
     std::shared_ptr<Admin>  addAdmin (const std::string &name_s, const std::string &password_s);//自动生成ID和level，默认level为0
+
+    std::shared_ptr<Admin> editAdmin (std::shared_ptr<Admin> &res ,const std::string &name_s, const std::string &password_s, const int level_s);
 
     enum {level0, level1, level2, level3, level4, level5};
 

@@ -12,7 +12,7 @@
 class Data{
 public:
     void Read ();
-    void Commit();
+    void Save();
 };
 
 

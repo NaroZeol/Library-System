@@ -31,9 +31,9 @@ void handle::PrintLogs (){
 }
 
 
-void handle::ClearBuffer ()
+void handle::ClearBuffer (std::istream &is)
 {
-    while (std::cin.get() != '\n')
+    while (is.get() != '\n' && is.good())
         continue;
 }
 
@@ -56,3 +56,30 @@ void handle::Pause()
     handle::ClearBuffer();
 }
 
+int handle::getAbsoluteTime (const std::string &str)
+{
+    
+    std::string date1_str;
+    if (str.empty())
+        date1_str = getCurrentTime();
+    else
+        date1_str = str;
+    std::string base_date_str = "Sat Jan 01 00:00:00 2022";
+
+    std::tm date1_tm = {};
+    std::tm base_date_tm = {};
+
+    std::istringstream ss1(date1_str);
+    std::istringstream ss2(base_date_str);
+
+    ss1 >> std::get_time(&date1_tm, "%a %b %d %H:%M:%S %Y");
+    ss2 >> std::get_time(&base_date_tm, "%a %b %d %H:%M:%S %Y");
+
+    std::time_t date1_time = mktime(&date1_tm);
+    std::time_t base_date_time = mktime(&base_date_tm);
+
+    double seconds_diff = difftime(date1_time, base_date_time);
+    int days_diff = seconds_diff / (60 * 60 * 24);
+
+    return days_diff;
+}

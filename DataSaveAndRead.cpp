@@ -3,19 +3,20 @@
 //Admin
 //Book
 
-void Data::Commit(){
+void Data::Save(){
     std::ofstream os; 
 //ReaderList
     os.open("Data\\ReaderInfo", std::ios::out|std::ios::trunc);
     auto &ReaderList = Reader::getReaderList();
-//INFO_Order:name, password, ID, level, BookBorrow(save as BookID)
+//INFO_Order:name, password, ID, level, BookBorrow(Save as BookID) and TimeRecord 
     for (auto &i : ReaderList){
         os << i.second->getName() << "|";
         os << i.second->getPassword() << "|";
         os << i.second->getID() << "|";
         os << i.second->getLevel() << "|";
-        for (auto &j : i.second->getBookBorrow()){
-            os << j->getID() << " ";
+        for (unsigned int j = 0; j < i.second->BookBorrow.size(); j++){
+            os << i.second->BookBorrow[j]->getID() << "|";
+            os << i.second->TimeRecord[j] << "|";
         }
         os << std::endl;
     }
@@ -47,9 +48,6 @@ void Data::Commit(){
     }
     os.close();
 }
-
-
-
 
 
 
@@ -107,7 +105,7 @@ void Data::Read(){
 
 //ReaderList
     is.open ("Data\\ReaderInfo", std::ios::in);
-//INFO_Order:name, password, ID, level, cap, BookBorrow(save as BookID)
+//INFO_Order:name, password, ID, level, cap, BookBorrow and TimeRecord(save as BookID)
     while (std::getline(is, line)){
         std::stringstream ssin(line);
         enum {
@@ -138,14 +136,36 @@ void Data::Read(){
                 break;
             }
         }
+
         auto create = tempAdmin.addReader(name_s, password_s, ID_s, level_s);
         auto &BookList = Book::getIDBookList();
         unsigned int temp = 0;
-        while (ssin.good() && ssin >> temp ){
-            if (BookList.count(temp))
-                create->BookBorrow.push_back(BookList[temp]);
+        std::string timerecord;
+
+        bool flag = true;//为真时读取的是BookID，为假时读取的是TimeRecord
+        
+        while (ssin.good() && ssin.peek() != EOF)
+        {
+            std::stringstream tempsteam;
+            while (ssin.peek() != '|' && ssin.peek() != EOF)
+                tempsteam << (char)ssin.get();
+            ssin.get();
+            if (flag)
+            {
+                tempsteam >> temp;
+                if (BookList.count(temp))
+                    create->BookBorrow.push_back(BookList[temp]);
+                flag = false;
+            }
+            else
+            {
+                std::getline(tempsteam, timerecord);
+                create->TimeRecord.push_back(timerecord);
+                flag = true;
+            }
         }
     }
+
     is.clear();
     is.close();
 

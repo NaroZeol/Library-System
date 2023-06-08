@@ -20,7 +20,7 @@ private:
     void addReader();
     void searchReader();
     void addAdmin();
-    void deleteAdmin();
+    void searchAdmin();
     void printBookList();
     void printReaderList();
     void printAdminList();

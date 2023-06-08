@@ -17,7 +17,7 @@ void AdminMenu::show()
         std::cout << "3.  Add Reader\n";
         std::cout << "4.  Search Reader\n";
         std::cout << "5.  Add Admin\n";
-        std::cout << "6.  Delete Admin\n";
+        std::cout << "6.  Search Admin\n";
         std::cout << "7.  Print Book List\n";
         std::cout << "8.  Print Reader List\n";
         std::cout << "9.  Print Admin List\n";
@@ -63,7 +63,7 @@ void AdminMenu::run(int choice)
         addAdmin();
         break;
     case 6:
-        deleteAdmin();
+        searchAdmin();
         break;
     case 7:
         printBookList();
@@ -83,7 +83,7 @@ void AdminMenu::run(int choice)
     default:
         break;
     }
-    DataSave.Commit();
+    DataSave.Save();
     handle::Pause();
     return;
 }
@@ -113,6 +113,11 @@ void AdminMenu::addBook ()
 
 void AdminMenu::searchBook()
 {
+    if (admin_ptr->getLevel() < 2)
+    {
+        std::cout << admin_ptr->getName() + " don't have the permission!\n";
+        return;
+    }
     while (true)
     {
         system("cls");
@@ -161,10 +166,12 @@ void AdminMenu::searchBook()
             }
         default:
             std::cerr << "Wrong input!\n";
-            return;
+            break;
         }
 
         system("cls");
+
+        std::shared_ptr<Book> book_s;
 
         if (book_list.empty())
         {
@@ -175,8 +182,7 @@ void AdminMenu::searchBook()
         else if (book_list.size() == 1)
         {
             std::cout << "There is 1 book found!\n";
-            book_list[0]->showBookInfo();
-            ID_s = book_list[0]->getID();
+            book_s = book_list[0];
         }
         else
         {
@@ -190,6 +196,7 @@ void AdminMenu::searchBook()
 
             std::cout << "Please enter the ID of the book: ";
             handle::InputData(std::cin, "ID", ID_s, [&](unsigned int ID){return TempIdSet.find(ID) != TempIdSet.end();} );//lambda表达式，引用传递，返回值为bool，参数为输入的值
+            book_s = Book::getIDBookList()[ID_s];
         }
 
         std::cout << std::endl;
@@ -202,13 +209,15 @@ void AdminMenu::searchBook()
             std::cout << "Please enter your choice: ";
             handle::InputData(std::cin, "choice", choice, [](int choice){return choice >= 1 && choice <= 3;});
 
-            if (choice <= 2 && Book::getIDBookList()[ID_s]->getStatus())
+            if (choice <= 2 && book_s->getStatus() == 1)
             {
                 std::cout << "This book is borrowed!\n";
                 handle::Pause();
                 continue;
             }
+
             bool flag = false;
+            char ch_choice;
 
             switch (choice)
             {
@@ -226,7 +235,7 @@ void AdminMenu::searchBook()
                 std::cout << "Please enter the ISBN of the book: ";
                 std::getline(std::cin, ISBN_s);
 
-                admin_ptr->editBook(Book::getIDBookList()[ID_s], name_s, ISBN_s);
+                admin_ptr->editBook(book_s, name_s, ISBN_s);
                 std::cout << "Edit book successfully!\n";
                 break;
             case 2:
@@ -235,13 +244,12 @@ void AdminMenu::searchBook()
                     std::cout << admin_ptr->getName() + " don't have the permission!\n";
                     break;
                 }
-                std::cout << "=====Delete Book=====\n";
                 std::cout << "Are you sure to delete this book?(y/n)\n";
-                char choice;
-                handle::InputData(std::cin, "choice", choice, [](char choice){return choice == 'y' || choice == 'Y' || choice == 'n' || choice == 'N';});
-                if (choice == 'y' || choice == 'Y'){
-                    admin_ptr->deleteBook(ID_s);
+                handle::InputData(std::cin, "choice", ch_choice, [](char choice){return choice == 'y' || choice == 'Y' || choice == 'n' || choice == 'N';});
+                if (ch_choice == 'y' || ch_choice == 'Y'){
+                    admin_ptr->deleteBook(book_s->getID());
                     std::cout << "Delete book successfully!\n";
+                    flag = true;
                 }
                 break;
             case 3:
@@ -254,6 +262,318 @@ void AdminMenu::searchBook()
             } 
             handle::Pause();
 
+            if (flag)
+                break;
+        }
+    }
+
+    return;
+}
+
+void AdminMenu::searchAdmin()
+{
+    if (admin_ptr->getLevel() < 4)
+    {
+        std::cout << admin_ptr->getName() + " don't have the permission!\n";
+        return;
+    }
+
+    while (true)
+    {
+        system("cls");
+        std::cout << "=====Search Admin=====\n";
+        std::cout << "1.  Search by Name\n";
+        std::cout << "2.  Search by ID\n";
+        std::cout << "3.  Exit\n";
+        std::cout << "Please enter your choice: ";
+        int choice;
+
+        handle::InputData(std::cin, "choice", choice, [](int choice){return choice >= 1 && choice <= 3;});
+
+        std::vector<std::shared_ptr<Admin>> admin_list;
+
+        std::string name_s;
+        std::string password_s;
+        int level_s;
+        unsigned int ID_s;
+
+        switch (choice)
+        {
+        case 1:
+            std::cout << "Please enter the name of the admin: ";
+
+            std::getline(std::cin, name_s);
+            admin_list = Admin::searchAdmin(name_s);
+            break;
+        case 2:
+            std::cout << "Please enter the ID of the admin: ";
+            handle::InputData(std::cin, "ID", ID_s);
+            admin_list = Admin::searchAdmin(ID_s);
+            break;
+        case 3:
+            try{
+                exit();
+            }
+            catch (int){
+                std::cout << "Exit successfully!\n";
+                return;
+            }
+        default:
+            std::cerr << "Wrong input!\n";
+            return;
+        }
+
+        system("cls");
+
+        std::shared_ptr<Admin> admin_s;
+
+        if (admin_list.empty())
+        {
+            std::cout << "No admin found!\n";
+            handle::Pause();
+            continue;
+        }
+        else if (admin_list.size() == 1)
+        {
+            std::cout << "There is 1 admin found!\n";
+            admin_s = admin_list[0];
+        }
+        else
+        {
+            std::set<unsigned int> TempIdSet;
+            std::cout << "There are " << admin_list.size() << " admins found!\n";
+            for (auto &i : admin_list){
+                i->showInfo();
+                TempIdSet.insert(i->getID());
+                std::cout << std::endl;
+            }
+            std::cout << "Please enter the ID of the admin: ";
+            handle::InputData(std::cin, "ID", ID_s, [&](unsigned int ID){return TempIdSet.find(ID) != TempIdSet.end();} );
+            admin_s = Admin::getAdminList()[ID_s];
+        }
+
+        std::cout << std::endl;
+
+        std::cout << "1. Edit Information\n";
+        std::cout << "2. Delete Admin\n";
+        std::cout << "3. Exit\n";
+
+        while (true)
+        {
+            std::cout << "Please enter your choice: ";
+            handle::InputData(std::cin, "choice", choice, [](int choice){return choice >= 1 && choice <= 3;});
+
+            char ch_choice;
+            bool flag = false;
+            switch (choice)
+            {
+            case 1:
+                if(admin_ptr->getLevel() < 4)
+                {
+                    std::cout << admin_ptr->getName() + " don't have the permission!\n";
+                    continue;
+                }
+                std::cout << "=====Edit Information=====\n";
+                std::cout << "Please enter the name of the admin: ";
+                std::getline(std::cin, name_s);
+                
+                std::cout << "Please enter the password of the admin: ";
+                std::getline(std::cin, password_s);
+
+                std::cout << "Please enter the level of the admin:(0~5)\n ";
+                handle::InputData(std::cin, "level", level_s, [](int level){return level >= 0 && level <= 5;});
+
+                admin_ptr->editAdmin(admin_s, name_s, password_s, level_s);
+                std::cout << "Edit admin successfully!\n";
+                break;
+            case 2:
+                if(admin_ptr->getLevel() < 4)
+                {
+                    std::cout << admin_ptr->getName() + " don't have the permission!\n";
+                    break;
+                }
+                if (admin_ptr->getID() == admin_s->getID())
+                {
+                    std::cout << "You can't delete yourself!\n";
+                    break;
+                }
+                std::cout << "Are you sure to delete this admin?(y/n)\n";
+                handle::InputData(std::cin, "choice", ch_choice, [](char choice){return choice == 'y' || choice == 'Y' || choice == 'n' || choice == 'N';});
+                if (ch_choice == 'y' || ch_choice == 'Y'){
+                    admin_ptr->deleteAdmin(admin_s->getID());
+                    std::cout << "Delete admin successfully!\n";
+                    flag = true;
+                }
+                break;
+            case 3:
+                std::cout << "Exit successfully!\n";
+                flag = true;
+                break;
+            default:
+                std::cerr << "Wrong input!\n";
+                break;
+            }
+            handle::Pause();
+            if (flag)
+                break;
+        }
+    }
+    return;
+}
+
+void AdminMenu::searchReader()
+{
+    if (admin_ptr->getLevel() < 3)
+    {
+        std::cout << admin_ptr->getName() + " don't have the permission!\n";
+        return;
+    }
+    while (true)
+    {
+        system("cls");
+        std::cout << "=====Search Reader=====\n";
+        std::cout << "1.  Search by Name\n";
+        std::cout << "2.  Search by ID\n";
+        std::cout << "3.  Exit\n";
+        std::cout << "Please enter your choice: ";
+        int choice;
+
+        handle::InputData(std::cin, "choice", choice, [](int choice){return choice >= 1 && choice <= 3;});
+
+        std::vector<std::shared_ptr<Reader>> reader_list;
+
+        std::string name_s;
+        std::string password_s;
+        int level_s;
+        unsigned int ID_s;//不应该在switch内部定义变量
+
+        switch (choice)
+        {
+        case 1:
+            std::cout << "Please enter the name of the reader: ";
+
+            std::getline(std::cin, name_s);
+            reader_list = Reader::searchReaderByName(name_s);
+            break;
+        case 2:
+            std::cout << "Please enter the ID of the reader: ";
+            handle::InputData(std::cin, "ID", ID_s);
+            reader_list = Reader::searchReaderByID(ID_s);
+            break;
+        case 3:
+            try{
+                exit();
+            }
+            catch (int){
+                std::cout << "Exit successfully!\n";
+                return;
+            }
+        default:
+            std::cerr << "Wrong input!\n";
+            return;
+        }
+
+        system("cls");
+
+        std::shared_ptr<Reader> reader_s;
+
+        if (reader_list.empty())
+        {
+            std::cout << "No reader found!\n";
+            handle::Pause();
+            continue;
+        }
+        else if (reader_list.size() == 1)
+        {
+            reader_s = reader_list[0];
+        }
+        else
+        {
+            std::set<unsigned int> TempIdSet;
+            std::cout << "There are " << reader_list.size() << " readers found!\n";
+            for (auto &i : reader_list){
+                i->showInfo();
+                TempIdSet.insert(i->getID());
+                std::cout << std::endl;
+            }
+            std::cout << "Please enter the ID of the reader: ";
+            handle::InputData(std::cin, "ID", ID_s, [&](unsigned int ID){return TempIdSet.find(ID) != TempIdSet.end();} );
+            reader_s = Reader::getReaderList()[ID_s];
+        }
+
+        system("cls");
+
+        reader_s->showInfo();
+        std::cout << "Book borrowed:\n";
+        for (auto &i : reader_s->getBookBorrow()){
+            std::cout << i->getName() << std::endl;
+        }
+        
+        std::cout << std::endl;
+
+        std::cout << "1. Edit Information\n";
+        std::cout << "2. Delete Reader\n";
+        std::cout << "3. Exit\n";
+
+        while (true)
+        {
+            std::cout << "Please enter your choice: ";
+            handle::InputData(std::cin, "choice", choice, [](int choice){return choice >= 1 && choice <= 3;});
+
+            if (choice <= 2 && !reader_s->getBookBorrow().empty())
+            {
+                std::cout << "This reader has borrowed books!\n";
+                handle::Pause();
+                return;
+            }
+
+            bool flag = false;
+            char ch_choice;
+
+            switch (choice)
+            {
+            case 1:
+                if(admin_ptr->getLevel() < 3)
+                {
+                    std::cout << admin_ptr->getName() + " don't have the permission!\n";
+                    break;
+                }
+                std::cout << "=====Edit Information=====\n";
+                std::cout << "Please enter the name of the reader: ";
+                std::getline(std::cin, name_s);
+                
+                std::cout << "Please enter the password of the reader: ";
+                std::getline(std::cin, password_s);
+
+                std::cout << "Please enter the level of the reader:(0~5)\n ";
+                handle::InputData(std::cin, "level", level_s, [](int level){return level >= 0 && level <= 5;});
+
+                admin_ptr->editReader(reader_s, name_s, password_s, level_s);
+                std::cout << "Edit reader successfully!\n";
+                break;
+            case 2:
+                if(admin_ptr->getLevel() < 3)
+                {
+                    std::cout << admin_ptr->getName() + " don't have the permission!\n";
+                    break;
+                }
+                std::cout << "Are you sure to delete this reader?(y/n)\n";
+                handle::InputData(std::cin, "choice", ch_choice, [](char choice){return choice == 'y' || choice == 'Y' || choice == 'n' || choice == 'N';});
+                if (ch_choice == 'y' || ch_choice == 'Y'){
+                    admin_ptr->deleteReader(reader_s->getID());
+                    std::cout << "Delete reader successfully!\n";
+                    flag = true;
+                }
+                break; 
+            case 3:
+                std::cout << "Exit successfully!\n";
+                flag = true;
+                break;
+            default:
+                std::cerr << "Wrong input!\n";
+                break;
+            }
+            handle::Pause();
             if (flag)
                 break;
         }
@@ -282,139 +602,6 @@ void AdminMenu::addReader ()
     std::cout << "Add reader successfully!\n";
 
     reader_s->showInfo();
-}
-
-void AdminMenu::searchReader()
-{
-    std::cout << "=====Search Reader=====\n";
-    std::cout << "1.  Search by Name\n";
-    std::cout << "2.  Search by ID\n";
-    std::cout << "3.  Exit\n";
-    std::cout << "Please enter your choice: ";
-    int choice;
-
-    handle::InputData(std::cin, "choice", choice, [](int choice){return choice >= 1 && choice <= 3;});
-
-    std::vector<std::shared_ptr<Reader>> reader_list;
-
-    std::string name_s;
-    std::string password_s;
-    int level_s;
-    unsigned int ID_s;//不应该在switch内部定义变量
-
-    switch (choice)
-    {
-    case 1:
-        std::cout << "Please enter the name of the reader: ";
-
-        std::getline(std::cin, name_s);
-        reader_list = Reader::searchReaderByName(name_s);
-        break;
-    case 2:
-        std::cout << "Please enter the ID of the reader: ";
-        handle::InputData(std::cin, "ID", ID_s);
-        reader_list = Reader::searchReaderByID(ID_s);
-        break;
-    case 3:
-        try{
-            exit();
-        }
-        catch (int){
-            std::cout << "Exit successfully!\n";
-            return;
-        }
-    default:
-        std::cerr << "Wrong input!\n";
-        return;
-    }
-
-    system("cls");
-
-    if (reader_list.empty())
-    {
-        std::cout << "No reader found!\n";
-        return;
-    }
-    else if (reader_list.size() == 1)
-    {
-        std::cout << "There is 1 reader found!\n";
-        reader_list[0]->showInfo();
-        ID_s = reader_list[0]->getID();
-    }
-    else
-    {
-        std::set<unsigned int> TempIdSet;
-        std::cout << "There are " << reader_list.size() << " readers found!\n";
-        for (auto &i : reader_list){
-            i->showInfo();
-            TempIdSet.insert(i->getID());
-            std::cout << std::endl;
-        }
-        std::cout << "Please enter the ID of the reader: ";
-        handle::InputData(std::cin, "ID", ID_s, [&](unsigned int ID){return TempIdSet.find(ID) != TempIdSet.end();} );
-    }
-
-    std::cout << std::endl;
-
-    std::cout << "1. Edit Information\n";
-    std::cout << "2. Delete Reader\n";
-    std::cout << "3. Exit\n";
-
-    std::cout << "Please enter your choice: ";
-    handle::InputData(std::cin, "choice", choice, [](int choice){return choice >= 1 && choice <= 3;});
-
-    if (choice <= 2 && Reader::getReaderList()[ID_s]->getBookBorrow().size() != 0)
-    {
-        std::cout << "This reader has borrowed books!\n";
-        handle::Pause();
-        return;
-    }
-
-    switch (choice)
-    {
-    case 1:
-        if(admin_ptr->getLevel() < 3)
-        {
-            std::cout << admin_ptr->getName() + " don't have the permission!\n";
-            return;
-        }
-        std::cout << "=====Edit Information=====\n";
-        std::cout << "Please enter the name of the reader: ";
-        std::getline(std::cin, name_s);
-        
-        std::cout << "Please enter the password of the reader: ";
-        std::getline(std::cin, password_s);
-
-        std::cout << "Please enter the level of the reader:(0~5)\n ";
-        handle::InputData(std::cin, "level", level_s, [](int level){return level >= 0 && level <= 5;});
-
-        admin_ptr->editReader(Reader::getReaderList()[ID_s], name_s, password_s, level_s);
-        std::cout << "Edit reader successfully!\n";
-        break;
-    case 2:
-        if(admin_ptr->getLevel() < 3)
-        {
-            std::cout << admin_ptr->getName() + " don't have the permission!\n";
-            return;
-        }
-        std::cout << "=====Delete Reader=====\n";
-        std::cout << "Are you sure to delete this reader?(y/n)\n";
-        char choice;
-        handle::InputData(std::cin, "choice", choice, [](char choice){return choice == 'y' || choice == 'Y' || choice == 'n' || choice == 'N';});
-        if (choice == 'y' || choice == 'Y'){
-            admin_ptr->deleteReader(ID_s);
-            std::cout << "Delete reader successfully!\n";
-        }
-        break; 
-    case 3:
-        std::cout << "Exit successfully!\n";
-        return;
-        break;
-    default:
-        std::cerr << "Wrong input!\n";
-        break;
-    }
-    return;
 }
 
 void AdminMenu::addAdmin()
@@ -474,36 +661,6 @@ void AdminMenu::addAdmin()
 
 }
 
-void AdminMenu::deleteAdmin()
-{
-    if (admin_ptr->getLevel() < 4)
-    {
-        std::cout << admin_ptr->getName() + " don't have the permission!\n";
-        return;
-    }
-    std::cout << "=====Delete Admin=====\n";
-    std::cout << "Please enter the ID of the admin: ";
-    unsigned int ID_s;
-    handle::InputData(std::cin, "ID", ID_s);
-
-    if (ID_s == admin_ptr->getID())
-    {
-        std::cout << "You can't delete yourself!\n";
-        return;
-    }
-
-    Admin::searchAdmin(ID_s)[0]->showInfo();
-    std::cout << "Are you sure to delete this admin?(y/n)\n";
-    char choice;
-    handle::InputData(std::cin, "choice", choice, [](char choice){return choice == 'y' || choice == 'Y' || choice == 'n' || choice == 'N';});
-    if (choice != 'y' && choice != 'Y')
-        return;
-
-    admin_ptr->deleteAdmin(ID_s);
-    std::cout << "Delete admin successfully!\n";
-
-}
-
 void AdminMenu::printBookList()
 {
     admin_ptr->PrintBookList();
@@ -526,7 +683,7 @@ void AdminMenu::printLogs()
 
 void AdminMenu::exit()
 {
-    DataSave.Commit();
+    DataSave.Save();
     throw 0;
 }
 
@@ -588,7 +745,7 @@ void ReaderMenu::run(int choice)
         std::cerr << "Wrong input!\n";
         break;
     }
-    DataSave.Commit();
+    DataSave.Save();
     return;
 }
 
@@ -636,6 +793,7 @@ void ReaderMenu::borrowBook()
                 exit();
             }
             catch (int){
+                std::cout << "Exit successfully!\n";
                 return;
             }
         default:
@@ -646,6 +804,7 @@ void ReaderMenu::borrowBook()
         if (book_list.empty())
         {
             std::cout << "No book found!\n";
+            handle::Pause();
             continue;
         }
         else if (book_list.size() == 1)
@@ -668,12 +827,12 @@ void ReaderMenu::borrowBook()
 
         std::cout << "Are you sure to borrow this book?(y/n)\n";
         char choicech;
-        handle::InputData(std::cin, "choice", choice, [](char choice){return choice == 'y' || choice == 'Y' || choice == 'n' || choice == 'N';});
+        handle::InputData(std::cin, "choice", choicech, [](char choice){return choice == 'y' || choice == 'Y' || choice == 'n' || choice == 'N';});
         if (choicech != 'y' && choicech != 'Y')
-            return;
+            continue;
 
         reader_ptr->borrowBook(ID_s);
-        DataSave.Commit();
+        DataSave.Save();
         handle::Pause();
     }
 }
@@ -690,14 +849,26 @@ void ReaderMenu::returnBook()
 
     std::cout << "The Books you have borrowed:\n";
     
-    for (auto &i : reader_ptr->getBookBorrow()){
-        i->showBookInfo();
+    std::set<unsigned int> exitSet;
+
+    auto borrowList = reader_ptr->getBookBorrow();
+
+    for (auto i = borrowList.begin(); i != borrowList.end(); i++)
+    {
+        i->get()->showBookInfo();
+        std::cout << "Borrowed time: " << reader_ptr->getTimeRecord()[i - borrowList.begin()] << std::endl;
         std::cout << std::endl;
+        exitSet.insert((*i)->getID());
     }
 
     std::cout << "Please enter the ID of the book: ";
     unsigned int ID_s;
-    handle::InputData(std::cin, "ID", ID_s);
+    handle::InputData(std::cin, "ID", ID_s, [&](unsigned int ID_s){return exitSet.count(ID_s) != 0;} );
+    std::cout << "Are you sure to return this book?(y/n)\n";
+    char choicech;
+    handle::InputData(std::cin, "choice", choicech, [](char choice){return choice == 'y' || choice == 'Y' || choice == 'n' || choice == 'N';});
+    if (choicech != 'y' && choicech != 'Y')
+        return;
     reader_ptr->returnBook(ID_s);
 }
 
@@ -737,7 +908,7 @@ void ReaderMenu::personalInfo()
         reader_ptr->editInfo(name_s, password_s);
         std::cout << "Edit reader successfully!\n";
 
-        DataSave.Commit();
+        DataSave.Save();
         break;
     case 2:
         std::cout << "Exit successfully!\n";
@@ -750,7 +921,7 @@ void ReaderMenu::personalInfo()
 
 void ReaderMenu::exit()
 {
-    DataSave.Commit();
+    DataSave.Save();
     throw 0;
 }
 
@@ -797,7 +968,7 @@ void MainMenu::run(int choice)
         std::cerr << "Wrong input!\n";
         break;
     }
-    DataSave.Commit();
+    DataSave.Save();
     return;
 }
 
@@ -859,13 +1030,15 @@ void MainMenu::adminLogin ()
         ID_s = admin_list[0]->getID();
     }
     else{
+        std::set<unsigned int> TempIdSet;
         std::cout << "There are " << admin_list.size() << " admins named " << name_s << "!\n";
         for (auto &i : admin_list){
             i->showInfo();
+            TempIdSet.insert(i->getID());
             std::cout << std::endl;
         }
         std::cout << "Please enter the ID of the admin: ";
-        handle::InputData(std::cin, "ID", ID_s);
+        handle::InputData(std::cin, "ID", ID_s, [&](unsigned int ID){return TempIdSet.find(ID) != TempIdSet.end();});
         }
 
     std::cout << "Please enter your password: ";
@@ -912,9 +1085,15 @@ void MainMenu::readerLogin ()
         ID_s = reader_list[0]->getID();
     }
     else{
+        std::set<unsigned int> TempIdSet;
         std::cout << "There are " << reader_list.size() << " readers named " << name_s << "!\n";
-        std::cout << "Please enter the ID of the reader:\n";
-        handle::InputData(std::cin, "ID", ID_s);
+        for (auto &i : reader_list){
+            i->showInfo();
+            TempIdSet.insert(i->getID());
+            std::cout << std::endl;
+        }
+        std::cout << "Please enter the ID of the reader: ";
+        handle::InputData(std::cin, "ID", ID_s, [&](unsigned int ID){return TempIdSet.find(ID) != TempIdSet.end();});
     }
 
     std::cout << "Please enter your password: ";
@@ -945,6 +1124,6 @@ void MainMenu::readerLogin ()
 
 void MainMenu::exit()
 {
-    DataSave.Commit();
+    DataSave.Save();
     throw 0;
 }

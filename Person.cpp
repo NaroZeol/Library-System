@@ -61,10 +61,6 @@ std::shared_ptr<Reader> Reader::Login (const unsigned int ID_s, const std::strin
 
 void Reader::borrowBook (unsigned int ID_s)
 {
-    if (ReaderList.find(this->getID()) == ReaderList.end()){
-        std::cout << "This reader doesn't exist!\n";
-        return;
-    }
     auto booklis = Book::getIDBookList();
     auto it =  booklis.find(ID_s);
     if (it == booklis.end()){
@@ -79,6 +75,7 @@ void Reader::borrowBook (unsigned int ID_s)
 
     if (check_cap()){
         BookBorrow.push_back(it->second);
+        TimeRecord.push_back(std::move(handle::getCurrentTime()));
         it->second->setStatus(1);
         std::cout << "Borrow Success!\n";
         handle::AddLogs("Reader " + getName() + "(ID: " + std::to_string(getID()) + ")" + " borrow book " + it->second->getName() +  "(ID: " + std::to_string(it->second->getID()) + ")" + " at " + handle::getCurrentTime());
@@ -110,6 +107,12 @@ void Reader::returnBook (unsigned int ID_s)
             BookBorrow.erase(i);
             it->second->setStatus(0);
             std::cout << "Return Success!\n";
+
+            if (handle::getAbsoluteTime() - handle::getAbsoluteTime(TimeRecord[i - BookBorrow.begin()]) > 14)
+                std::cout << "You have overdue!\n";
+
+            TimeRecord.erase(TimeRecord.begin() + (i - BookBorrow.begin()));
+
             handle::AddLogs("Reader " + getName() +  "(ID: " + std::to_string(getID()) + ")" + " return book " + it->second->getName() +  "(ID: " + std::to_string(it->second->getID()) + ")" + " at " + handle::getCurrentTime());
             return;
         }
@@ -141,15 +144,19 @@ void Reader::PrintBorrowedBooks ()
         std::cout << "None\n";
         return;
     }
-    for (auto &i : BookBorrow){
-        std::cout << "Name: " << i->getName() << std::endl;
-        std::cout << "ID: " << i->getID() << std::endl;
-        std::cout << "ISBN: " << i->getISBN() << std::endl;
+    for (auto i = BookBorrow.begin(); i != BookBorrow.end(); ++i){
+        std::cout << "Book Name: " << (*i)->getName() << std::endl;
+        std::cout << "Book ID: " << (*i)->getID() << std::endl;
+        std::cout << "Book ISBN: " << (*i)->getISBN() << std::endl;
+        std::cout << "Borrow Time: " << TimeRecord[i - BookBorrow.begin()] << std::endl;
+        std::cout << std::endl;
     }
     return;
 }
 
 std::vector<std::shared_ptr<Book>> &Reader::getBookBorrow() {return BookBorrow;}
+
+std::vector<std::string> &Reader::getTimeRecord() {return TimeRecord;}
 
 std::vector<std::shared_ptr<Reader>> Reader::searchReaderByName (const std::string &name_s)
 {
@@ -443,6 +450,25 @@ std::shared_ptr<Book> Admin::addBook(Book &&book_s)
     return ptr;
 }
 
+std::shared_ptr<Admin> Admin::editAdmin (std::shared_ptr<Admin> &res ,const std::string &name_s, const std::string &password_s, const int level_s)
+{
+    if (level < 4){
+        std::cout << this->getName() + " don't have the permission!\n";
+        return nullptr;
+    }
+    if (Admin::getAdminList().find(res->getID()) == Admin::getAdminList().end()){
+        std::cout << "Admin Not Found!\n";
+        return nullptr;
+    }
+    res->setName(name_s);
+    res->setPassword(password_s);
+    res->setLevel(level_s);
+    if (tempOrder == false)
+        handle::AddLogs("Admin " + this->getName() +  "(ID: " + std::to_string(this->getID()) + ")" + " Edit Admin " + res->getName() + "(ID: " + std::to_string(res->getID()) + ")" +  " at " + handle::getCurrentTime());
+    return res;
+}
+
+
 std::shared_ptr<Book> Admin::editBook (std::shared_ptr<Book> &res ,const std::string &name_s, const std::string &ISBN_s)
 {
     if (level < 3){
@@ -491,7 +517,9 @@ void Admin::deleteBook (unsigned int ID_s)
     }
     if (tempOrder == false)
         handle::AddLogs("Admin " + this->getName() +  "(ID: " + std::to_string(this->getID()) + ")" + " Delete Book " + it->second->getName() + "(ID: " + std::to_string(it->second->getID()) + ")" +  " at " + handle::getCurrentTime());
+    Book::getISBNBookList().erase(it->second->getISBN());
     Book::getIDBookList().erase(it);
+
 }
 
 void Admin::deleteAdmin (unsigned int ID_s)
@@ -500,7 +528,7 @@ void Admin::deleteAdmin (unsigned int ID_s)
         std::cout << this->getName() + " don't have the permission!\n";
         return;
     }
-    auto AdminList = Admin::getAdminList();
+    auto &AdminList = Admin::getAdminList();
     if (AdminList.find(ID_s) != AdminList.end()){
         if (tempOrder == false)
             handle::AddLogs("Admin " + this->getName() +  "(ID: " + std::to_string(this->getID()) + ")" + " Delete Admin " + AdminList[ID_s]->getName() + "(ID: " + std::to_string(AdminList[ID_s]->getID()) + ")" +  " at " + handle::getCurrentTime());
@@ -560,7 +588,7 @@ void Admin::PrintBookList(){
         std::cout << this->getName() + " don't have the permission!\n";
         return;
     }
-    std::cout << "=====ISBN List=====\n";
+    std::cout << "=====Book List=====\n";
     auto BookList = Book::getIDBookList();
     for (auto &i : BookList){
         std::cout << "Name: " << i.second->getName() << std::endl;
