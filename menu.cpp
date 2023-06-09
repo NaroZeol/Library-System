@@ -505,10 +505,12 @@ void AdminMenu::searchReader()
 
         reader_s->showInfo();
         std::cout << "Book borrowed:\n";
-        for (auto &i : reader_s->getBookBorrow()){
-            std::cout << i->getName() << std::endl;
-        }
-        
+        if (reader_s->getBookBorrow().empty())
+            std::cout << "None!\n\n";
+        else
+            for (auto &i : reader_s->getBookBorrow())
+                std::cout << i->getName() << std::endl;
+
         std::cout << std::endl;
 
         std::cout << "1. Edit Information\n";

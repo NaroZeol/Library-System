@@ -47,7 +47,7 @@ bool Reader::check_cap (){return BookBorrow.size() < level + 3;}
 
 std::shared_ptr<Reader> Reader::Login (const unsigned int ID_s, const std::string &password_s)
 {
-    auto ReaderList = Reader::getReaderList();
+    auto &ReaderList = Reader::getReaderList();
     if (ReaderList.find(ID_s) != ReaderList.end()){
         if (ReaderList[ID_s]->getPassword() == password_s){
             return ReaderList[ID_s];
@@ -493,7 +493,7 @@ void Admin::deleteReader (unsigned int ID_s)
         std::cout << this->getName() + " don't have the permission!\n";
         return;
     }    
-    auto ReaderList = Reader::getReaderList();
+    auto &ReaderList = Reader::getReaderList();
     if (ReaderList.find(ID_s) != ReaderList.end()){
         if (tempOrder == false)
             handle::AddLogs("Admin" + this->getName() + "(ID: " + std::to_string(this->getID()) + ")" +  "Delete Reader " + ReaderList[ID_s]->getName() + "(ID: " + std::to_string(ReaderList[ID_s]->getID()) + ")" +  " at " + handle::getCurrentTime());
@@ -564,7 +564,7 @@ void Admin::PrintReaderList ()
         std::cout << this->getName() + " don't have the permission!\n";
         return;
     }
-    auto ReaderList = Reader::getReaderList();
+    auto &ReaderList = Reader::getReaderList();
     std::cout << "=====Reader List=====\n";
     for (auto &i : ReaderList){
         std::cout << "Name: " << i.second->getName() << std::endl;
@@ -574,7 +574,6 @@ void Admin::PrintReaderList ()
         std::cout << "Borrowed Books: ";
         if (i.second->getBookBorrow().empty()){
             std::cout << "None\n";
-            continue;
         }
         else
             for (auto &j : i.second->getBookBorrow())
