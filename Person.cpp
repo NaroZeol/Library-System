@@ -428,7 +428,7 @@ std::shared_ptr<Book> Admin::addBook (const std::string &name_s, const std::stri
         std::cout << "ID has been used!\n";
         return nullptr;
     }
-    auto ptr = addBook(temp);//脫脙脝盲脣没潞炉脢媒脳梅脦陋麓煤脌铆
+    auto ptr = addBook(temp);//用其他函数作为代理
     return ptr;
 }
 
@@ -510,7 +510,7 @@ void Admin::deleteBook (unsigned int ID_s)
         std::cout << this->getName() + " don't have the permission!\n";
         return;
     }    
-    auto &it = Book::getIDBookList().find(ID_s);
+    auto it = Book::getIDBookList().find(ID_s);
     if (it == Book::getIDBookList().end()){
         std::cout << "Book Not Found!\n";
         return;
@@ -588,7 +588,7 @@ void Admin::PrintBookList(){
         return;
     }
     std::cout << "=====Book List=====\n";
-    auto &BookList = Book::getIDBookList();
+    auto BookList = Book::getIDBookList();
     for (auto &i : BookList){
         std::cout << "Name: " << i.second->getName() << std::endl;
         std::cout << "ID: " << i.second->getID() << std::endl;
@@ -605,7 +605,7 @@ void Admin::PrintAdminList()
         return;
     }
     std::cout << "=====Admin List=====\n";
-    auto &AdminList = Admin::getAdminList();
+    auto AdminList = Admin::getAdminList();
     for (auto &i : AdminList){
         std::cout << "Name: " << i.second->getName() << std::endl;
         std::cout << "ID: " << i.second->getID() << std::endl;

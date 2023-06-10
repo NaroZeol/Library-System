@@ -199,7 +199,10 @@ void AdminMenu::searchBook()
             book_s = Book::getIDBookList()[ID_s];
         }
 
+        system ("cls");
+        book_s->showBookInfo();
         std::cout << std::endl;
+        
         std::cout << "1. Edit Information\n";
         std::cout << "2. Delete Book\n";
         std::cout << "3. Exit\n";
@@ -352,6 +355,8 @@ void AdminMenu::searchAdmin()
             admin_s = Admin::getAdminList()[ID_s];
         }
 
+        system("cls");
+        admin_s->showInfo();
         std::cout << std::endl;
 
         std::cout << "1. Edit Information\n";
