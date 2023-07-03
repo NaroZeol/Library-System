@@ -28,6 +28,8 @@ void Pause();
 
 int getAbsoluteTime (const std::string &str = std::string());
 
+std::string hash_str_to_str (const std::string &str);
+
 template<typename T>
 void InputData(std::istream &is, const char * str , T &data)//ÎÞ¼ì²éº¯Êý
 {

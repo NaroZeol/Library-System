@@ -527,13 +527,6 @@ void AdminMenu::searchReader()
             std::cout << "Please enter your choice: ";
             handle::InputData(std::cin, "choice", choice, [](int choice){return choice >= 1 && choice <= 3;});
 
-            if (choice <= 2 && !reader_s->getBookBorrow().empty())
-            {
-                std::cout << "This reader has borrowed books!\n";
-                handle::Pause();
-                return;
-            }
-
             bool flag = false;
             char ch_choice;
 
@@ -559,6 +552,13 @@ void AdminMenu::searchReader()
                 std::cout << "Edit reader successfully!\n";
                 break;
             case 2:
+                if (!reader_s->getBookBorrow().empty())
+                {
+                std::cout << "This reader has borrowed books!\n";
+                handle::Pause();
+                continue;
+                }
+
                 if(admin_ptr->getLevel() < 3)
                 {
                     std::cout << admin_ptr->getName() + " don't have the permission!\n";
