@@ -83,3 +83,10 @@ int handle::getAbsoluteTime (const std::string &str)
 
     return days_diff;
 }
+
+std::string handle::hash_str_to_str (const std::string &str)
+{
+    std::hash<std::string> hash_str;
+    std::string str_hash = std::to_string(hash_str(str));
+    return str_hash;
+}

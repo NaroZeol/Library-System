@@ -9,6 +9,7 @@
 #include "Book.h"
 
 class Person{
+    friend class Data;
 protected:
     std::string name;
     std::string password;

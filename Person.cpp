@@ -2,7 +2,7 @@
 #include "handle.h"
 
 Person::Person(const std::string &name_s, const std::string &password_s, unsigned int ID_s, int level_s):
-    name(name_s), password(password_s), ID(ID_s), level(level_s){}
+    name(name_s), password(handle::hash_str_to_str(password_s)), ID(ID_s), level(level_s){}
 
 int Person::getLevel()const{return level;}
 
@@ -10,7 +10,7 @@ void Person::setLevel(const int level_s){level = level_s;}
 
 std::string Person::getPassword ()const{return password;}
 
-void Person::setPassword (const std::string &str){password = str;}
+void Person::setPassword (const std::string &str){password = handle::hash_str_to_str(str);}
 
 unsigned int Person::getID ()const{return ID;}
 
@@ -48,8 +48,10 @@ bool Reader::check_cap (){return BookBorrow.size() < level + 3;}
 std::shared_ptr<Reader> Reader::Login (const unsigned int ID_s, const std::string &password_s)
 {
     auto &ReaderList = Reader::getReaderList();
+    std::string ps_str = handle::hash_str_to_str(password_s);
+
     if (ReaderList.find(ID_s) != ReaderList.end()){
-        if (ReaderList[ID_s]->getPassword() == password_s){
+        if (ReaderList[ID_s]->getPassword() == ps_str){
             return ReaderList[ID_s];
         }
         else
@@ -132,7 +134,7 @@ void Reader::showInfo() const
 void Reader::editInfo (const std::string &name_s, const std::string &password_s)
 {
     name = name_s;
-    password = password_s;
+    password = handle::hash_str_to_str(password_s);
     if (tempOrder == false)
         handle::AddLogs("Reader ID " + std::to_string(ID) + " edited his/her information.");
 }
@@ -207,9 +209,10 @@ std::map<unsigned int, std::shared_ptr<Admin>> &Admin::getAdminList (){return Ad
 
 std::shared_ptr<Admin> Admin::Login (const unsigned int ID_s, const std::string &password_s)
 {
-    auto AdminList = Admin::getAdminList();
+    auto &AdminList = Admin::getAdminList();
+    std::string ps_str = handle::hash_str_to_str(password_s);
     if (AdminList.find(ID_s) != AdminList.end()){
-        if (AdminList[ID_s]->getPassword() == password_s){
+        if (AdminList[ID_s]->getPassword() == ps_str){
             return AdminList[ID_s];
         }
         else

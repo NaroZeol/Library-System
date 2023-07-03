@@ -138,6 +138,7 @@ void Data::Read(){
         }
 
         auto create = tempAdmin.addReader(name_s, password_s, ID_s, level_s);
+        create->password = password_s;
         auto &BookList = Book::getIDBookList();
         unsigned int temp = 0;
         std::string timerecord;
@@ -202,7 +203,7 @@ void Data::Read(){
                 break;
             }
         }
-        tempAdmin.addAdmin(name_s, password_s, ID_s, level_s);
+        tempAdmin.addAdmin(name_s, password_s, ID_s, level_s)->password = password_s;
     }
     is.clear();
     is.close();
